@@ -326,6 +326,26 @@ public partial class MainViewModel : ObservableObject
         var toRemove = Connections.Where(c => c.From == node || c.To == node).ToList();
         foreach (var c in toRemove) Connections.Remove(c);
         CanvasNodes.Remove(node);
+        if (SelectedNode == node) SelectedNode = null;
+    }
+
+    /// <summary>Delete the currently selected node (if not fixed).</summary>
+    [RelayCommand]
+    private void DeleteSelected()
+    {
+        if (SelectedNode != null && !SelectedNode.IsFixed)
+            RemoveNode(SelectedNode);
+    }
+
+    /// <summary>Remove all non-fixed nodes and all connections.</summary>
+    [RelayCommand]
+    private void ClearAllNodes()
+    {
+        Connections.Clear();
+        var toRemove = CanvasNodes.Where(n => !n.IsFixed).ToList();
+        foreach (var n in toRemove) CanvasNodes.Remove(n);
+        SelectedNode = null;
+        StepInfo = "Canvas cleared.";
     }
 
     /// <summary>Begin or complete a wiring operation when a port is clicked.</summary>

@@ -72,6 +72,7 @@ public partial class GraphCanvas : UserControl
 
         // Select the node
         VM.SelectNodeCommand.Execute(node);
+        Focus(); // Ensure keyboard focus so DEL key works
 
         // Start drag
         _draggingNode = node;

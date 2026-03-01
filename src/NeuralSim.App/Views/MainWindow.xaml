@@ -45,7 +45,11 @@
                     <Button Content="Step ▶" Command="{Binding StepForwardCommand}" Margin="0,0,2,0" />
                     <Button Content="⏩" Command="{Binding RunToEndCommand}" Margin="0,0,4,0" />
                     <Button Content="↺ Reset" Command="{Binding ResetCommand}"
-                            Background="{StaticResource BgLightBrush}" Margin="0,0,16,0" />
+                            Background="{StaticResource BgLightBrush}" Margin="0,0,4,0" />
+                    <Button Content="🗑 Delete" Command="{Binding DeleteSelectedCommand}"
+                            Background="{StaticResource BgLightBrush}" Margin="0,0,2,0" ToolTip="Delete selected node (DEL)" />
+                    <Button Content="🧹 Clear All" Command="{Binding ClearAllNodesCommand}"
+                            Background="{StaticResource BgLightBrush}" Margin="0,0,16,0" ToolTip="Remove all non-fixed nodes" />
                 </StackPanel>
 
                 <TextBlock DockPanel.Dock="Left" Text="{Binding StepInfo}"
