@@ -1,5 +1,44 @@
 # Changelog
 
+## v1.1 — CNN / ResNet / Transformer + Project Files
+
+### New Features
+
+- **CNN 支援** — 新增 `Conv2D`、`MaxPool2D`、`BatchNorm2D`、`Flatten`、`GlobalAvgPool2D` 五種 Op，可在 canvas 拖曳組合任意 CNN
+- **ResNet 支援** — 新增 `ResNetBuilder`，自動建構含 residual skip connection 的 ResNet 圖（1×1 Conv 下採樣 + Add 殘差連接）
+- **Transformer 支援** — 新增 `MultiHeadAttention`、`LayerNorm`、`PositionalEncoding`、`FlatLinear3D`、`MeanPool1D` Op + `TransformerBuilder`（encoder stack: PosEnc → [MHA → Add → LN → FFN → Add → LN] × N → Linear）
+- **專案檔案系統** — 支援 `.nsim` 專案檔（JSON 格式）。使用者可以儲存模型配置與 canvas 佈局，下次直接「開啟」即可還原；也方便分享給其他人
+- **Inspector 擴充** — Inspector 面板支援 Conv2D（InCh/OutCh/K/S/P）、MaxPool2D（K/S）、BatchNorm2D（Channels）、MultiHeadAttention（d_model/Heads）、LayerNorm（Dim）、PositionalEncoding（d_model/MaxSeq）配置編輯
+
+### New Ops (Palette)
+
+| Category | Ops |
+|---|---|
+| CNN | Conv2D, MaxPool2D, BatchNorm2D, Flatten, GlobalAvgPool2D |
+| Transformer | MultiHeadAttention, LayerNorm, PositionalEncoding, MeanPool1D |
+
+### Tensor Engine Enhancements
+
+- 3D/4D indexer (`Get3D`/`Set3D`/`Get4D`/`Set4D`)
+- `Conv2D`, `MaxPool2D`, `GlobalAvgPool2D`, `BatchNorm2D` (inference) static methods
+- `BatchedMatMul` (3D batched matrix multiply)
+- `LayerNorm` (last-axis normalization)
+- `KaimingUniform` init (for ReLU/Conv)
+- `Softmax` 支援 3D tensor
+- `Add` 支援 3D + 1D broadcasting
+
+### Builders
+
+- `CnnBuilder` — Conv → BN → ReLU → Pool → … → Flatten → Linear → Softmax
+- `ResNetBuilder` — Stem → [ResBlock(Conv→BN→ReLU→Conv→BN + Skip→Add→ReLU)] × N → GAP → Linear → Softmax
+- `TransformerBuilder` — PosEnc → [MHA→Add→LN→FFN→Add→LN] × N → MeanPool → Linear → Softmax
+
+### Tests
+
+- 新增 29 個測試 (CNN 8 + ResNet 4 + Transformer 13 + ProjectFile 2 + existing 12 = 共 41)
+
+---
+
 ## v1.0 — Initial Release
 
 ### Features

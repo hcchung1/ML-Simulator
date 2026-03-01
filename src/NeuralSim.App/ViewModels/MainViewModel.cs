@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NeuralSim.Core;
 using NeuralSim.Core.Ops;
+using NeuralSim.Core.Builders;
 
 namespace NeuralSim.App.ViewModels;
 
@@ -14,7 +15,7 @@ public partial class CanvasNodeViewModel : ObservableObject
 {
     private static int _counter;
 
-    public string Id { get; } = $"node_{Interlocked.Increment(ref _counter)}";
+    public string Id { get; init; } = $"node_{Interlocked.Increment(ref _counter)}";
 
     [ObservableProperty] private string _opType = "Linear";
     [ObservableProperty] private string _label = "Linear";
@@ -28,16 +29,28 @@ public partial class CanvasNodeViewModel : ObservableObject
     [ObservableProperty] private int _inFeatures = 4;
     [ObservableProperty] private int _outFeatures = 8;
 
+    // CNN-specific config
+    [ObservableProperty] private int _inChannels = 1;
+    [ObservableProperty] private int _outChannels = 16;
+    [ObservableProperty] private int _kernelSize = 3;
+    [ObservableProperty] private int _stride = 1;
+    [ObservableProperty] private int _padding = 1;
+
+    // Transformer-specific config
+    [ObservableProperty] private int _numHeads = 4;
+    [ObservableProperty] private int _dModel = 64;
+    [ObservableProperty] private int _maxSeqLen = 100;
+
     /// <summary>Whether this node is one of the fixed Input/Output endpoints.</summary>
     public bool IsFixed { get; init; }
 
     /// <summary>Port names this node type exposes.</summary>
     public IReadOnlyList<string> InputPortNames => OpType switch
     {
-        "GraphInput" => [],          // no inputs
-        "GraphOutput" => ["input"],  // one input
-        "Add" => ["a", "b"],         // two inputs
-        _ => ["input"]               // single input
+        "GraphInput" => [],
+        "GraphOutput" => ["input"],
+        "Add" => ["a", "b"],
+        _ => ["input"]
     };
 
     public IReadOnlyList<string> OutputPortNames => OpType switch
@@ -47,8 +60,17 @@ public partial class CanvasNodeViewModel : ObservableObject
     };
 
     public bool IsLinear => OpType == "Linear";
+    public bool IsConv2D => OpType == "Conv2D";
+    public bool IsMaxPool2D => OpType == "MaxPool2D";
+    public bool IsBatchNorm2D => OpType == "BatchNorm2D";
+    public bool IsMultiHeadAttention => OpType == "MultiHeadAttention";
+    public bool IsLayerNorm => OpType == "LayerNorm";
+    public bool IsPositionalEncoding => OpType == "PositionalEncoding";
     public bool IsGraphInput => OpType == "GraphInput";
     public bool IsGraphOutput => OpType == "GraphOutput";
+    public bool HasChannelConfig => OpType is "Conv2D" or "BatchNorm2D";
+    public bool HasKernelConfig => OpType is "Conv2D" or "MaxPool2D";
+    public bool HasTransformerConfig => OpType is "MultiHeadAttention" or "LayerNorm" or "PositionalEncoding";
 
     public string BlockColor => OpType switch
     {
@@ -58,6 +80,15 @@ public partial class CanvasNodeViewModel : ObservableObject
         "Tanh"       => "#FFA726",
         "Softmax"    => "#AB47BC",
         "Add"        => "#7986CB",
+        "Conv2D"     => "#26A69A",
+        "MaxPool2D"  => "#4DD0E1",
+        "BatchNorm2D"=> "#5C6BC0",
+        "Flatten"    => "#78909C",
+        "GlobalAvgPool2D" => "#4FC3F7",
+        "MultiHeadAttention" => "#FFB300",
+        "LayerNorm"  => "#7E57C2",
+        "PositionalEncoding" => "#C0CA33",
+        "MeanPool1D" => "#4FC3F7",
         "GraphInput" => "#78909C",
         "GraphOutput"=> "#78909C",
         _            => "#607D8B"
@@ -80,8 +111,17 @@ public partial class CanvasNodeViewModel : ObservableObject
     partial void OnOpTypeChanged(string value)
     {
         OnPropertyChanged(nameof(IsLinear));
+        OnPropertyChanged(nameof(IsConv2D));
+        OnPropertyChanged(nameof(IsMaxPool2D));
+        OnPropertyChanged(nameof(IsBatchNorm2D));
+        OnPropertyChanged(nameof(IsMultiHeadAttention));
+        OnPropertyChanged(nameof(IsLayerNorm));
+        OnPropertyChanged(nameof(IsPositionalEncoding));
         OnPropertyChanged(nameof(IsGraphInput));
         OnPropertyChanged(nameof(IsGraphOutput));
+        OnPropertyChanged(nameof(HasChannelConfig));
+        OnPropertyChanged(nameof(HasKernelConfig));
+        OnPropertyChanged(nameof(HasTransformerConfig));
         OnPropertyChanged(nameof(BlockColor));
         OnPropertyChanged(nameof(InputPortNames));
         OnPropertyChanged(nameof(OutputPortNames));
@@ -89,12 +129,23 @@ public partial class CanvasNodeViewModel : ObservableObject
 
     partial void OnInFeaturesChanged(int value) => UpdateLabel();
     partial void OnOutFeaturesChanged(int value) => UpdateLabel();
+    partial void OnInChannelsChanged(int value) => UpdateLabel();
+    partial void OnOutChannelsChanged(int value) => UpdateLabel();
+    partial void OnKernelSizeChanged(int value) => UpdateLabel();
+    partial void OnDModelChanged(int value) => UpdateLabel();
+    partial void OnNumHeadsChanged(int value) => UpdateLabel();
 
     public void UpdateLabel()
     {
         Label = OpType switch
         {
             "Linear" => $"Linear ({InFeatures}→{OutFeatures})",
+            "Conv2D" => $"Conv2D ({InChannels}→{OutChannels}, k{KernelSize})",
+            "MaxPool2D" => $"MaxPool (k{KernelSize})",
+            "BatchNorm2D" => $"BN ({InChannels})",
+            "MultiHeadAttention" => $"MHA (d{DModel}, h{NumHeads})",
+            "LayerNorm" => $"LN ({DModel})",
+            "PositionalEncoding" => $"PosEnc (d{DModel})",
             "GraphInput" => "Input",
             "GraphOutput" => "Output",
             _ => OpType
@@ -149,12 +200,25 @@ public partial class MainViewModel : ObservableObject
     // ───── Palette ─────
     public ObservableCollection<PaletteItem> Palette { get; } =
     [
+        // Core
         new() { OpType = "Linear",  Label = "Linear",  Color = "#4A90D9" },
+        new() { OpType = "Add",     Label = "Add",     Color = "#7986CB" },
+        // Activations
         new() { OpType = "ReLU",    Label = "ReLU",    Color = "#E57373" },
         new() { OpType = "Sigmoid", Label = "Sigmoid", Color = "#66BB6A" },
         new() { OpType = "Tanh",    Label = "Tanh",    Color = "#FFA726" },
         new() { OpType = "Softmax", Label = "Softmax", Color = "#AB47BC" },
-        new() { OpType = "Add",     Label = "Add",     Color = "#7986CB" },
+        // CNN
+        new() { OpType = "Conv2D",      Label = "Conv2D",      Color = "#26A69A" },
+        new() { OpType = "MaxPool2D",   Label = "MaxPool2D",   Color = "#4DD0E1" },
+        new() { OpType = "BatchNorm2D", Label = "BatchNorm2D", Color = "#5C6BC0" },
+        new() { OpType = "Flatten",     Label = "Flatten",     Color = "#78909C" },
+        new() { OpType = "GlobalAvgPool2D", Label = "AvgPool", Color = "#4FC3F7" },
+        // Transformer
+        new() { OpType = "MultiHeadAttention", Label = "MH-Attention", Color = "#FFB300" },
+        new() { OpType = "LayerNorm",  Label = "LayerNorm",  Color = "#7E57C2" },
+        new() { OpType = "PositionalEncoding", Label = "PosEncoding", Color = "#C0CA33" },
+        new() { OpType = "MeanPool1D", Label = "MeanPool1D", Color = "#4FC3F7" },
     ];
 
     // ───── Canvas ─────
@@ -218,11 +282,40 @@ public partial class MainViewModel : ObservableObject
             OpType = info.OpType,
             X = info.X,
             Y = info.Y,
-            InFeatures = InputSize,
-            OutFeatures = 8
         };
+        ApplyDefaults(node);
         node.UpdateLabel();
         CanvasNodes.Add(node);
+    }
+
+    private void ApplyDefaults(CanvasNodeViewModel node)
+    {
+        switch (node.OpType)
+        {
+            case "Linear":
+                node.InFeatures = InputSize;
+                node.OutFeatures = 8;
+                break;
+            case "Conv2D":
+                node.InChannels = 1; node.OutChannels = 16;
+                node.KernelSize = 3; node.Stride = 1; node.Padding = 1;
+                break;
+            case "MaxPool2D":
+                node.KernelSize = 2; node.Stride = 2;
+                break;
+            case "BatchNorm2D":
+                node.InChannels = 16;
+                break;
+            case "MultiHeadAttention":
+                node.DModel = 64; node.NumHeads = 4;
+                break;
+            case "LayerNorm":
+                node.DModel = 64;
+                break;
+            case "PositionalEncoding":
+                node.DModel = 64; node.MaxSeqLen = 100;
+                break;
+        }
     }
 
     /// <summary>Remove a non-fixed node from the canvas.</summary>
@@ -342,6 +435,17 @@ public partial class MainViewModel : ObservableObject
                     "Tanh"    => new TanhOp(node.Id, "Tanh"),
                     "Softmax" => new SoftmaxOp(node.Id, "Softmax"),
                     "Add"     => new AddOp(node.Id, "Add"),
+                    "Conv2D"  => new Conv2DOp(node.Id, node.InChannels, node.OutChannels,
+                                    node.KernelSize, node.Stride, node.Padding, rng, node.Label),
+                    "MaxPool2D" => new MaxPool2DOp(node.Id, node.KernelSize,
+                                    node.Stride > 0 ? node.Stride : node.KernelSize, node.Label),
+                    "BatchNorm2D" => new BatchNorm2DOp(node.Id, node.InChannels, rng, node.Label),
+                    "Flatten"  => new FlattenOp(node.Id, "Flatten"),
+                    "GlobalAvgPool2D" => new GlobalAvgPool2DOp(node.Id, "GlobalAvgPool2D"),
+                    "LayerNorm" => new LayerNormOp(node.Id, node.DModel, node.Label),
+                    "MultiHeadAttention" => new MultiHeadAttentionOp(node.Id, node.DModel, node.NumHeads, rng, node.Label),
+                    "PositionalEncoding" => new PositionalEncodingOp(node.Id, node.DModel, node.MaxSeqLen, node.Label),
+                    "MeanPool1D" => new MeanPool1DOp(node.Id, "MeanPool1D"),
                     _ => throw new InvalidOperationException($"Unknown op: {node.OpType}")
                 };
                 graph.AddOp(op);
@@ -569,6 +673,124 @@ public partial class MainViewModel : ObservableObject
     {
         if (t.Length <= 6) return string.Join(", ", t.Data.Select(v => v.ToString("F3")));
         return $"{string.Join(", ", t.Data.Take(4).Select(v => v.ToString("F3")))} ...";
+    }
+
+    // ═══════ Project Save/Load ═══════
+
+    public ProjectFile ExportProject()
+    {
+        var project = new ProjectFile
+        {
+            Name = "Untitled",
+            InputText = InputText,
+            Seed = Seed,
+        };
+
+        foreach (var node in CanvasNodes)
+        {
+            project.Nodes.Add(new ProjectNode
+            {
+                Id = node.Id,
+                OpType = node.OpType,
+                Label = node.Label,
+                X = node.X,
+                Y = node.Y,
+                IsFixed = node.IsFixed,
+                InFeatures = node.InFeatures,
+                OutFeatures = node.OutFeatures,
+                InChannels = node.InChannels,
+                OutChannels = node.OutChannels,
+                KernelSize = node.KernelSize,
+                Stride = node.Stride,
+                Padding = node.Padding,
+                NumHeads = node.NumHeads,
+                DModel = node.DModel,
+                MaxSeqLen = node.MaxSeqLen,
+            });
+        }
+
+        foreach (var conn in Connections)
+        {
+            project.Connections.Add(new ProjectConnection
+            {
+                FromId = conn.From.Id,
+                FromPort = conn.FromPort,
+                ToId = conn.To.Id,
+                ToPort = conn.ToPort,
+            });
+        }
+
+        return project;
+    }
+
+    public void ImportProject(ProjectFile project)
+    {
+        // Clear non-fixed nodes and all connections
+        var toRemove = CanvasNodes.Where(n => !n.IsFixed).ToList();
+        foreach (var n in toRemove) CanvasNodes.Remove(n);
+        Connections.Clear();
+
+        InputText = project.InputText;
+        Seed = project.Seed;
+
+        var nodeMap = new Dictionary<string, CanvasNodeViewModel>();
+
+        foreach (var pNode in project.Nodes)
+        {
+            if (pNode.OpType == "GraphInput")
+            {
+                InputNode.X = pNode.X;
+                InputNode.Y = pNode.Y;
+                nodeMap[pNode.Id] = InputNode;
+                continue;
+            }
+            if (pNode.OpType == "GraphOutput")
+            {
+                OutputNode.X = pNode.X;
+                OutputNode.Y = pNode.Y;
+                nodeMap[pNode.Id] = OutputNode;
+                continue;
+            }
+
+            var node = new CanvasNodeViewModel
+            {
+                OpType = pNode.OpType,
+                Label = pNode.Label,
+                X = pNode.X,
+                Y = pNode.Y,
+                InFeatures = pNode.InFeatures,
+                OutFeatures = pNode.OutFeatures,
+                InChannels = pNode.InChannels,
+                OutChannels = pNode.OutChannels,
+                KernelSize = pNode.KernelSize,
+                Stride = pNode.Stride,
+                Padding = pNode.Padding,
+                NumHeads = pNode.NumHeads,
+                DModel = pNode.DModel,
+                MaxSeqLen = pNode.MaxSeqLen,
+            };
+            CanvasNodes.Add(node);
+            nodeMap[pNode.Id] = node;
+        }
+
+        foreach (var pConn in project.Connections)
+        {
+            if (!nodeMap.TryGetValue(pConn.FromId, out var from)) continue;
+            if (!nodeMap.TryGetValue(pConn.ToId, out var to)) continue;
+
+            var conn = new ConnectionViewModel
+            {
+                From = from,
+                FromPort = pConn.FromPort,
+                To = to,
+                ToPort = pConn.ToPort,
+            };
+            conn.UpdatePositions();
+            Connections.Add(conn);
+        }
+
+        ResetCommand.Execute(null);
+        StepInfo = $"Loaded project: {project.Name}";
     }
 }
 

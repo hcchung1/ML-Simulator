@@ -35,6 +35,10 @@
                            VerticalAlignment="Center" Margin="0,0,20,0" />
 
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="📂" Click="OpenProject_Click"
+                            Background="{StaticResource BgLightBrush}" Margin="0,0,2,0" ToolTip="Open Project" />
+                    <Button Content="💾" Click="SaveProject_Click"
+                            Background="{StaticResource BgLightBrush}" Margin="0,0,8,0" ToolTip="Save Project" />
                     <Button Content="▶ Run" Command="{Binding BuildAndRunCommand}"
                             Background="{StaticResource AccentBrush}" Margin="0,0,4,0" FontWeight="SemiBold" />
                     <Button Content="◀" Command="{Binding StepBackwardCommand}" Margin="0,0,2,0" />
@@ -149,6 +153,76 @@
                             <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
                         </StackPanel>
 
+                        <!-- Conv2D config -->
+                        <StackPanel Visibility="{Binding SelectedNode.IsConv2D, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="InCh:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.InChannels, UpdateSourceTrigger=PropertyChanged}" Width="40" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                                <TextBlock Text="OutCh:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="8,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.OutChannels, UpdateSourceTrigger=PropertyChanged}" Width="40" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="K:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.KernelSize, UpdateSourceTrigger=PropertyChanged}" Width="30" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                                <TextBlock Text="S:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="8,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.Stride, UpdateSourceTrigger=PropertyChanged}" Width="30" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                                <TextBlock Text="P:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="8,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.Padding, UpdateSourceTrigger=PropertyChanged}" Width="30" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
+                        </StackPanel>
+
+                        <!-- MaxPool2D config -->
+                        <StackPanel Visibility="{Binding SelectedNode.IsMaxPool2D, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="K:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.KernelSize, UpdateSourceTrigger=PropertyChanged}" Width="40" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                                <TextBlock Text="Stride:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="8,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.Stride, UpdateSourceTrigger=PropertyChanged}" Width="40" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
+                        </StackPanel>
+
+                        <!-- BatchNorm2D config -->
+                        <StackPanel Visibility="{Binding SelectedNode.IsBatchNorm2D, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Channels:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.InChannels, UpdateSourceTrigger=PropertyChanged}" Width="50" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
+                        </StackPanel>
+
+                        <!-- MultiHeadAttention config -->
+                        <StackPanel Visibility="{Binding SelectedNode.IsMultiHeadAttention, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="d_model:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.DModel, UpdateSourceTrigger=PropertyChanged}" Width="50" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                                <TextBlock Text="Heads:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="8,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.NumHeads, UpdateSourceTrigger=PropertyChanged}" Width="40" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
+                        </StackPanel>
+
+                        <!-- LayerNorm config -->
+                        <StackPanel Visibility="{Binding SelectedNode.IsLayerNorm, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Dim:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.DModel, UpdateSourceTrigger=PropertyChanged}" Width="50" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
+                        </StackPanel>
+
+                        <!-- PositionalEncoding config -->
+                        <StackPanel Visibility="{Binding SelectedNode.IsPositionalEncoding, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="d_model:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.DModel, UpdateSourceTrigger=PropertyChanged}" Width="50" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                                <TextBlock Text="MaxSeq:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="8,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.MaxSeqLen, UpdateSourceTrigger=PropertyChanged}" Width="50" FontSize="12" Padding="4,2" Background="{StaticResource BgLightBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
+                        </StackPanel>
+
                         <TextBlock Text="{Binding InspectorContent}"
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    FontFamily="Consolas" FontSize="12"
@@ -168,7 +242,7 @@
 
         <!-- Status bar -->
         <Border Grid.Row="2" Background="{StaticResource BgMediumBrush}" Padding="10,4">
-            <TextBlock Text="NeuralSim v0.2 — Drag &amp; Drop Graph Editor"
+            <TextBlock Text="NeuralSim v1.1 — CNN / ResNet / Transformer"
                        Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" />
         </Border>
     </Grid>
