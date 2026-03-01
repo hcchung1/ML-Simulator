@@ -15,8 +15,8 @@
     </Window.DataContext>
 
     <Window.Resources>
-        <conv:StatusToBrushConverter x:Key="StatusToBrush" />
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:HexToBrushConverter x:Key="HexToBrush" />
     </Window.Resources>
 
     <Grid>
@@ -26,7 +26,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- ═══ Top bar: step controls ═══ -->
+        <!-- ═══ Top bar ═══ -->
         <Border Grid.Row="0" Background="{StaticResource BgMediumBrush}" Padding="10,8">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Left" Text="NeuralSim"
@@ -35,16 +35,16 @@
                            VerticalAlignment="Center" Margin="0,0,20,0" />
 
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="◀ Back" Command="{Binding StepBackwardCommand}" Margin="0,0,4,0" />
-                    <Button Content="▶ Step" Command="{Binding StepForwardCommand}" 
-                            Background="{StaticResource AccentBrush}" Margin="0,0,4,0" />
-                    <Button Content="⏩ Run All" Command="{Binding RunToEndCommand}" Margin="0,0,4,0" />
-                    <Button Content="↺ Reset" Command="{Binding ResetCommand}" Margin="0,0,16,0"
-                            Background="{StaticResource BgLightBrush}" />
+                    <Button Content="▶ Run" Command="{Binding BuildAndRunCommand}"
+                            Background="{StaticResource AccentBrush}" Margin="0,0,4,0" FontWeight="SemiBold" />
+                    <Button Content="◀" Command="{Binding StepBackwardCommand}" Margin="0,0,2,0" />
+                    <Button Content="Step ▶" Command="{Binding StepForwardCommand}" Margin="0,0,2,0" />
+                    <Button Content="⏩" Command="{Binding RunToEndCommand}" Margin="0,0,4,0" />
+                    <Button Content="↺ Reset" Command="{Binding ResetCommand}"
+                            Background="{StaticResource BgLightBrush}" Margin="0,0,16,0" />
                 </StackPanel>
 
-                <TextBlock DockPanel.Dock="Left" 
-                           Text="{Binding StepInfo}" 
+                <TextBlock DockPanel.Dock="Left" Text="{Binding StepInfo}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            VerticalAlignment="Center" FontSize="13"
                            TextTrimming="CharacterEllipsis" />
@@ -60,40 +60,43 @@
             </DockPanel>
         </Border>
 
-        <!-- ═══ Main content: 3 columns ═══ -->
+        <!-- ═══ Main 3 columns ═══ -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="220" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="280" />
             </Grid.ColumnDefinitions>
 
-            <!-- ─── Left: Model Builder ─── -->
+            <!-- ─── Left: Op Palette + Config ─── -->
             <Border Grid.Column="0" Background="{StaticResource BgMediumBrush}" Margin="4">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12">
-                        <TextBlock Text="Model Builder" FontSize="15" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                        <TextBlock Text="Op Palette" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
+                        <TextBlock Text="Drag onto canvas"
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,0,0,10" />
 
-                        <TextBlock Text="Layer Sizes (comma-separated)"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding LayerSizesText, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgLightBrush}"
-                                 Foreground="{StaticResource TextPrimaryBrush}"
-                                 BorderThickness="0" Padding="8,6" FontSize="13" />
+                        <!-- Draggable palette items -->
+                        <ItemsControl ItemsSource="{Binding Palette}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:PaletteItem}">
+                                    <Border Background="{Binding Color, Converter={StaticResource HexToBrush}}"
+                                            CornerRadius="6" Padding="10,8" Margin="0,0,0,6"
+                                            Cursor="Hand"
+                                            MouseMove="PaletteItem_MouseMove"
+                                            Tag="{Binding OpType}">
+                                        <TextBlock Text="{Binding Label}"
+                                                   Foreground="White" FontWeight="SemiBold" FontSize="13"
+                                                   HorizontalAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-                        <TextBlock Text="Hidden Activation"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,10,0,4" />
-                        <ComboBox ItemsSource="{Binding ActivationChoices}"
-                                  SelectedItem="{Binding ActivationChoice}"
-                                  FontSize="13" />
+                        <Separator Margin="0,12" Background="{StaticResource BgLightBrush}" />
 
-                        <TextBlock Text="Output Activation"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,10,0,4" />
-                        <ComboBox ItemsSource="{Binding OutputActivationChoices}"
-                                  SelectedItem="{Binding OutputActivationChoice}"
-                                  FontSize="13" />
-
+                        <!-- Config -->
                         <TextBlock Text="Random Seed"
                                    Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,10,0,4" />
                         <TextBox Text="{Binding Seed, UpdateSourceTrigger=PropertyChanged}"
@@ -101,71 +104,24 @@
                                  Foreground="{StaticResource TextPrimaryBrush}"
                                  BorderThickness="0" Padding="8,6" FontSize="13" />
 
-                        <Separator Margin="0,16" Background="{StaticResource BgLightBrush}" />
+                        <Separator Margin="0,12" Background="{StaticResource BgLightBrush}" />
 
-                        <TextBlock Text="Input Vector (comma-separated)"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgLightBrush}"
-                                 Foreground="{StaticResource TextPrimaryBrush}"
-                                 BorderThickness="0" Padding="8,6" FontSize="13"
-                                 TextWrapping="Wrap" AcceptsReturn="False" />
-
-                        <Button Content="▶ Build &amp; Run" Margin="0,16,0,0"
-                                Command="{Binding BuildAndRunCommand}"
-                                Background="{StaticResource AccentBrush}"
-                                FontSize="14" FontWeight="SemiBold"
-                                Padding="12,10" />
+                        <TextBlock Text="Tips" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
+                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}">
+                            • Drag op → canvas to add&#x0a;
+                            • Click output port (red) then input port (blue) to wire&#x0a;
+                            • Drag nodes to rearrange&#x0a;
+                            • DEL to remove selected node&#x0a;
+                            • ESC to cancel wiring
+                        </TextBlock>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
 
             <!-- ─── Center: Graph Canvas ─── -->
-            <Border Grid.Column="1" Background="{StaticResource BgDarkBrush}" Margin="2">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding Nodes}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas Width="800" Height="1200" 
-                                        Background="Transparent" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemContainerStyle>
-                            <Style TargetType="ContentPresenter">
-                                <Setter Property="Canvas.Left" Value="{Binding X}" />
-                                <Setter Property="Canvas.Top" Value="{Binding Y}" />
-                            </Style>
-                        </ItemsControl.ItemContainerStyle>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:OpNodeViewModel}">
-                                <Border Background="{Binding Status, Converter={StaticResource StatusToBrush}}"
-                                        CornerRadius="8" Padding="12,8" MinWidth="160"
-                                        BorderBrush="{StaticResource BgLightBrush}" BorderThickness="1"
-                                        Cursor="Hand">
-                                    <Border.InputBindings>
-                                        <MouseBinding Gesture="LeftClick"
-                                                      Command="{Binding DataContext.SelectNodeCommand, 
-                                                                RelativeSource={RelativeSource AncestorType=Window}}"
-                                                      CommandParameter="{Binding}" />
-                                    </Border.InputBindings>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Label}"
-                                                   Foreground="White" FontWeight="SemiBold" FontSize="13" />
-                                        <TextBlock Text="{Binding OpType}"
-                                                   Foreground="#B0B0C0" FontSize="11" Margin="0,2,0,0" />
-                                        <TextBlock Text="{Binding OutputSummary}"
-                                                   Foreground="#FFD54F" FontSize="11" Margin="0,4,0,0"
-                                                   TextWrapping="Wrap" MaxWidth="200"
-                                                   Visibility="{Binding OutputSummary, 
-                                                       Converter={x:Static views:StringToVisConverter.Instance}}" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Border>
+            <views:GraphCanvas Grid.Column="1" DataContext="{Binding}" Margin="2" />
 
             <!-- ─── Right: Inspector ─── -->
             <Border Grid.Column="2" Background="{StaticResource BgMediumBrush}" Margin="4">
@@ -173,6 +129,25 @@
                     <StackPanel Margin="12">
                         <TextBlock Text="{Binding InspectorTitle}" FontSize="15" FontWeight="SemiBold"
                                    Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+
+                        <!-- Linear config when selected -->
+                        <StackPanel Visibility="{Binding SelectedNode.IsLinear, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="In:" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.InFeatures, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="50" FontSize="12" Padding="4,2"
+                                         Background="{StaticResource BgLightBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                                <TextBlock Text="Out:" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0" />
+                                <TextBox Text="{Binding SelectedNode.OutFeatures, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="50" FontSize="12" Padding="4,2"
+                                         Background="{StaticResource BgLightBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                            </StackPanel>
+                            <Separator Margin="0,4,0,8" Background="{StaticResource BgLightBrush}" />
+                        </StackPanel>
 
                         <TextBlock Text="{Binding InspectorContent}"
                                    Foreground="{StaticResource TextPrimaryBrush}"
@@ -191,9 +166,9 @@
             </Border>
         </Grid>
 
-        <!-- ═══ Status bar ═══ -->
+        <!-- Status bar -->
         <Border Grid.Row="2" Background="{StaticResource BgMediumBrush}" Padding="10,4">
-            <TextBlock Text="NeuralSim v0.1 — MLP Forward Pass Visualizer"
+            <TextBlock Text="NeuralSim v0.2 — Drag &amp; Drop Graph Editor"
                        Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" />
         </Border>
     </Grid>

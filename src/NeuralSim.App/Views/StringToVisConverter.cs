@@ -13,7 +13,12 @@ public class StringToVisConverter : IValueConverter
     public static readonly StringToVisConverter Instance = new();
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        => string.IsNullOrWhiteSpace(value?.ToString()) ? Visibility.Collapsed : Visibility.Visible;
+    {
+        // Support both string (empty → collapsed) and int (0 → collapsed)
+        if (value is int count)
+            return count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        return string.IsNullOrWhiteSpace(value?.ToString()) ? Visibility.Collapsed : Visibility.Visible;
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotImplementedException();

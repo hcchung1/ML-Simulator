@@ -35,3 +35,27 @@ public class BoolToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+/// <summary>
+/// Converts a hex color string (e.g. "#4A90D9") to a SolidColorBrush.
+/// Used for Scratch-style block coloring.
+/// </summary>
+public class HexToBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is string hex)
+        {
+            try
+            {
+                var color = (Color)ColorConverter.ConvertFromString(hex);
+                return new SolidColorBrush(color);
+            }
+            catch { }
+        }
+        return new SolidColorBrush(Colors.Gray);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
