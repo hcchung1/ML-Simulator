@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.3 — Canvas Zoom & Pan
+## v1.11 — Canvas Zoom & Pan
 
 ### New Features
 
