@@ -14,7 +14,16 @@
         <views:StringToVisConverter x:Key="StrToVis" />
     </UserControl.Resources>
 
-    <Grid x:Name="RootGrid">
+    <Grid>
+        <ScrollViewer x:Name="CanvasScroller"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      PreviewMouseWheel="OnPreviewMouseWheel"
+                      Background="Transparent">
+            <Grid x:Name="RootGrid" Width="5000" Height="5000">
+                <Grid.LayoutTransform>
+                    <ScaleTransform ScaleX="{Binding ZoomScale}" ScaleY="{Binding ZoomScale}" />
+                </Grid.LayoutTransform>
         <!-- Edges layer (behind nodes) -->
         <ItemsControl x:Name="EdgesLayer" ItemsSource="{Binding Connections}">
             <ItemsControl.ItemsPanel>
@@ -106,12 +115,16 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <!-- Wiring indicator -->
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Wiring indicator (overlay, not affected by scroll/zoom) -->
         <TextBlock x:Name="WiringLabel"
                    Text="Click a port to complete connection (ESC to cancel)"
                    Foreground="#FFD54F" FontSize="12" FontWeight="SemiBold"
                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
                    Margin="0,0,0,10"
+                   IsHitTestVisible="False"
                    Visibility="Collapsed" />
     </Grid>
 </UserControl>

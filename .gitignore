@@ -22,5 +22,8 @@ project.lock.json
 ## IDE
 .idea/
 *.sln.iml
-NeuralSim-v1.0-win-x64.zip
-NeuralSim-v1.1-win-x64.zip
+
+# release files
+# NeuralSim-v1.0-win-x64.zip
+# NeuralSim-v1.1-win-x64.zip
+NeuralSim-v*-win-x64.zip

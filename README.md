@@ -27,6 +27,7 @@ No Python. No GPU. Just a single `.exe` — open it and start experimenting.
 - **Inline Input Editing** — Type your input vector directly into the Input block
 - **Output Display** — Final result is shown on the Output block when execution completes
 - **Supported Operations** — Linear, ReLU, Sigmoid, Tanh, Softmax, Add
+- **Canvas Zoom & Pan** — Ctrl+scroll to zoom, scroll to pan vertically, Alt+scroll to pan horizontally; toolbar shows zoom % with +/− buttons
 - **Reproducible** — Random seed control for deterministic weight initialization
 - **Self-Contained** — Ships as a single executable, no runtime installation required
 
@@ -77,6 +78,9 @@ publish.bat
 
 | Shortcut | Action |
 |----------|--------|
+| `Ctrl + Scroll` | Zoom in / out |
+| `Scroll` | Vertical scroll |
+| `Alt + Scroll` | Horizontal scroll |
 | `DEL` | Delete selected node |
 | `ESC` | Cancel wiring |
 | Drag | Move nodes on canvas |

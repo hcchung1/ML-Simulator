@@ -23,6 +23,27 @@ public partial class GraphCanvas : UserControl
         Focusable = true;
     }
 
+    // ───── Zoom / Scroll ─────
+
+    private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            // Ctrl + scroll → zoom
+            int delta = e.Delta > 0 ? 10 : -10;
+            VM.ZoomBy(delta);
+            e.Handled = true;
+        }
+        else if (Keyboard.Modifiers == ModifierKeys.Alt)
+        {
+            // Alt + scroll → horizontal scroll
+            double offset = e.Delta > 0 ? -60 : 60;
+            CanvasScroller.ScrollToHorizontalOffset(CanvasScroller.HorizontalOffset + offset);
+            e.Handled = true;
+        }
+        // else: plain scroll → default vertical scroll behavior
+    }
+
     // ───── Helpers ─────
 
     /// <summary>Walk up the visual tree to check if any ancestor is of type T.</summary>
@@ -51,7 +72,7 @@ public partial class GraphCanvas : UserControl
     {
         if (!e.Data.GetDataPresent("OpType")) return;
         var opType = (string)e.Data.GetData("OpType");
-        var pos = e.GetPosition(this);
+        var pos = e.GetPosition(RootGrid);
 
         // Snap to reasonable position (center the node)
         double x = Math.Max(0, pos.X - CanvasNodeViewModel.NodeWidth / 2);
@@ -76,7 +97,7 @@ public partial class GraphCanvas : UserControl
 
         // Start drag
         _draggingNode = node;
-        _dragStart = e.GetPosition(this);
+        _dragStart = e.GetPosition(RootGrid);
         _dragNodeStartX = node.X;
         _dragNodeStartY = node.Y;
         _isDragging = false;
@@ -87,7 +108,7 @@ public partial class GraphCanvas : UserControl
     private void Node_MouseMove(object sender, MouseEventArgs e)
     {
         if (_draggingNode == null || e.LeftButton != MouseButtonState.Pressed) return;
-        var pos = e.GetPosition(this);
+        var pos = e.GetPosition(RootGrid);
         double dx = pos.X - _dragStart.X;
         double dy = pos.Y - _dragStart.Y;
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3 — Canvas Zoom & Pan
+
+### New Features
+
+- **縮放功能** — Ctrl+滾輪縮放畫布 (10%–500%)，工具欄顯示目前縮放百分比，可直接輸入數字調整
+- **平移功能** — 滾輪上下滝動，Alt+滾輪左右滝動
+- **工具欄縮放控制** — 「−」/「+」按鈕 + 百分比輸入框
+
+---
+
 ## v1.1 — CNN / ResNet / Transformer + Project Files
 
 ### New Features

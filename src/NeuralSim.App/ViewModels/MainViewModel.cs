@@ -241,6 +241,24 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _inputSize = 4;
     [ObservableProperty] private int _seed = 42;
 
+    // ───── Zoom ─────
+    [ObservableProperty] private int _zoomPercent = 100;
+    public double ZoomScale => ZoomPercent / 100.0;
+
+    partial void OnZoomPercentChanged(int value)
+    {
+        OnPropertyChanged(nameof(ZoomScale));
+    }
+
+    [RelayCommand]
+    private void ZoomIn() => ZoomPercent = Math.Min(500, ZoomPercent + 10);
+
+    [RelayCommand]
+    private void ZoomOut() => ZoomPercent = Math.Max(10, ZoomPercent - 10);
+
+    public void ZoomBy(int deltaPercent) =>
+        ZoomPercent = Math.Clamp(ZoomPercent + deltaPercent, 10, 500);
+
     // ───── Trace state ─────
     [ObservableProperty] private int _currentStep = -1;
     [ObservableProperty] private int _totalSteps;
