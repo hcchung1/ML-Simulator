@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.12 — FFN Composite Module
+
+### New Features
+
+- **FFN 複合模組** — 左側 Palette 新增「⬡ FFN Block」，拖到 canvas 後自動展開為 `FlatLinear3D → ReLU → FlatLinear3D` 三個獨立積木並自動連線，使用者可自由調整每個子積木的參數
+- **FlatLinear3D Op** — 新增 `Linear3D` Palette 項目，支援 3D tensor `(B,S,D)` 自動 reshape 的 Linear 層，適用於 Transformer 內部 FFN 使用
+- **Composite Module 架構** — 建立複合模組拖放機制，未來可擴展更多預設模組（如 MHA sub-block 等）
+
+### New Palette Items
+
+| Category | Items |
+|---|---|
+| Transformer | FlatLinear3D (Linear3D) |
+| Composite Modules | ⬡ FFN Block (FlatLinear3D → ReLU → FlatLinear3D) |
+
+### Default FFN Parameters
+
+- `dModel = 64`, `ffDim = 128`
+- 展開後三個積木垂直排列，間距 80px，已自動連線
+
+### Tests
+
+- 新增 3 個 FFN 測試 (`FlatLinear3DOp_Handles2DInput`, `FFN_Composite_Graph_Executes`, `FFN_Composite_PreservesShape`)
+
+---
+
 ## v1.11 — Canvas Zoom & Pan
 
 ### New Features

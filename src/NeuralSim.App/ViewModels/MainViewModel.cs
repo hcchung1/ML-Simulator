@@ -7,9 +7,9 @@ using NeuralSim.Core.Builders;
 
 namespace NeuralSim.App.ViewModels;
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 // Canvas Node (draggable op block on canvas)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 
 public partial class CanvasNodeViewModel : ObservableObject
 {
@@ -59,7 +59,8 @@ public partial class CanvasNodeViewModel : ObservableObject
         _ => ["output"]              // single output
     };
 
-    public bool IsLinear => OpType == "Linear";
+    public bool IsLinear => OpType is "Linear" or "FlatLinear3D";
+    public bool IsFlatLinear3D => OpType == "FlatLinear3D";
     public bool IsConv2D => OpType == "Conv2D";
     public bool IsMaxPool2D => OpType == "MaxPool2D";
     public bool IsBatchNorm2D => OpType == "BatchNorm2D";
@@ -75,6 +76,7 @@ public partial class CanvasNodeViewModel : ObservableObject
     public string BlockColor => OpType switch
     {
         "Linear"     => "#4A90D9",
+        "FlatLinear3D" => "#5C9FE0",
         "ReLU"       => "#E57373",
         "Sigmoid"    => "#66BB6A",
         "Tanh"       => "#FFA726",
@@ -111,6 +113,7 @@ public partial class CanvasNodeViewModel : ObservableObject
     partial void OnOpTypeChanged(string value)
     {
         OnPropertyChanged(nameof(IsLinear));
+        OnPropertyChanged(nameof(IsFlatLinear3D));
         OnPropertyChanged(nameof(IsConv2D));
         OnPropertyChanged(nameof(IsMaxPool2D));
         OnPropertyChanged(nameof(IsBatchNorm2D));
@@ -139,8 +142,9 @@ public partial class CanvasNodeViewModel : ObservableObject
     {
         Label = OpType switch
         {
-            "Linear" => $"Linear ({InFeatures}→{OutFeatures})",
-            "Conv2D" => $"Conv2D ({InChannels}→{OutChannels}, k{KernelSize})",
+            "Linear" => $"Linear ({InFeatures}->{OutFeatures})",
+            "FlatLinear3D" => $"Linear3D ({InFeatures}->{OutFeatures})",
+            "Conv2D" => $"Conv2D ({InChannels}->{OutChannels}, k{KernelSize})",
             "MaxPool2D" => $"MaxPool (k{KernelSize})",
             "BatchNorm2D" => $"BN ({InChannels})",
             "MultiHeadAttention" => $"MHA (d{DModel}, h{NumHeads})",
@@ -153,9 +157,9 @@ public partial class CanvasNodeViewModel : ObservableObject
     }
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 // Connection (edge between two nodes)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 
 public partial class ConnectionViewModel : ObservableObject
 {
@@ -180,9 +184,55 @@ public partial class ConnectionViewModel : ObservableObject
     }
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// <summary>Visual composite frame drawn behind a set of canvas nodes.</summary>
+public partial class CanvasGroupViewModel : ObservableObject
+{
+    public string Id { get; init; } = Guid.NewGuid().ToString("N")[..8];
+
+    [ObservableProperty] private string _groupType = "FFN";
+    [ObservableProperty] private string _label = "FFN";
+    [ObservableProperty] private string _fillColor = "#DCE5E7EB";
+    [ObservableProperty] private string _borderColor = "#202020";
+
+    [ObservableProperty] private double _x;
+    [ObservableProperty] private double _y;
+    [ObservableProperty] private double _width;
+    [ObservableProperty] private double _height;
+
+    public List<CanvasNodeViewModel> Members { get; } = [];
+
+    public bool Contains(CanvasNodeViewModel node) => Members.Contains(node);
+
+    public void RecalculateBounds(
+        double sidePadding = 28,
+        double topPadding = 40,
+        double bottomPadding = 32)
+    {
+        if (Members.Count == 0) return;
+
+        double minX = Members.Min(n => n.X);
+        double minY = Members.Min(n => n.Y);
+        double maxX = Members.Max(n => n.X + CanvasNodeViewModel.NodeWidth);
+        double maxY = Members.Max(n => n.Y + CanvasNodeViewModel.NodeHeight);
+
+        double left = minX - sidePadding;
+        double top = minY - topPadding;
+        double right = maxX + sidePadding;
+        double bottom = maxY + bottomPadding;
+
+        if (left < 0) left = 0;
+        if (top < 0) top = 0;
+
+        X = left;
+        Y = top;
+        Width = Math.Max(0, right - left);
+        Height = Math.Max(0, bottom - top);
+    }
+}
+
+// ????????????????????????????????????????????????????
 // Palette item (left panel)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 
 public class PaletteItem
 {
@@ -191,13 +241,13 @@ public class PaletteItem
     public string Color { get; init; } = "#607D8B";
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 // Main ViewModel
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 
 public partial class MainViewModel : ObservableObject
 {
-    // ───── Palette ─────
+    // ????? Palette ?????
     public ObservableCollection<PaletteItem> Palette { get; } =
     [
         // Core
@@ -219,29 +269,33 @@ public partial class MainViewModel : ObservableObject
         new() { OpType = "LayerNorm",  Label = "LayerNorm",  Color = "#7E57C2" },
         new() { OpType = "PositionalEncoding", Label = "PosEncoding", Color = "#C0CA33" },
         new() { OpType = "MeanPool1D", Label = "MeanPool1D", Color = "#4FC3F7" },
+        new() { OpType = "FlatLinear3D", Label = "Linear3D", Color = "#5C9FE0" },
+        // Composite modules
+        new() { OpType = "FFN", Label = "漎?FFN Block", Color = "#FF8F00" },
     ];
 
-    // ───── Canvas ─────
+    // ????? Canvas ?????
     public ObservableCollection<CanvasNodeViewModel> CanvasNodes { get; } = [];
     public ObservableCollection<ConnectionViewModel> Connections { get; } = [];
+    public ObservableCollection<CanvasGroupViewModel> CanvasGroups { get; } = [];
 
     /// <summary>The fixed "Input" node.</summary>
     public CanvasNodeViewModel InputNode { get; }
     /// <summary>The fixed "Output" node.</summary>
     public CanvasNodeViewModel OutputNode { get; }
 
-    // ───── Wiring state ─────
+    // ????? Wiring state ?????
     [ObservableProperty] private CanvasNodeViewModel? _wiringSource;
     [ObservableProperty] private string _wiringSourcePort = "";
     [ObservableProperty] private bool _isWiring;
     [ObservableProperty] private bool _wiringSourceIsOutput;
 
-    // ───── Input ─────
+    // ????? Input ?????
     [ObservableProperty] private string _inputText = "0.5, -0.3, 0.8, 0.1";
     [ObservableProperty] private int _inputSize = 4;
     [ObservableProperty] private int _seed = 42;
 
-    // ───── Zoom ─────
+    // ????? Zoom ?????
     [ObservableProperty] private int _zoomPercent = 100;
     public double ZoomScale => ZoomPercent / 100.0;
 
@@ -259,19 +313,19 @@ public partial class MainViewModel : ObservableObject
     public void ZoomBy(int deltaPercent) =>
         ZoomPercent = Math.Clamp(ZoomPercent + deltaPercent, 10, 500);
 
-    // ───── Trace state ─────
+    // ????? Trace state ?????
     [ObservableProperty] private int _currentStep = -1;
     [ObservableProperty] private int _totalSteps;
     [ObservableProperty] private string _stepInfo = "Drop ops onto canvas, wire them, then Run.";
     [ObservableProperty] private bool _hasTrace;
 
-    // ───── Inspector ─────
+    // ????? Inspector ?????
     [ObservableProperty] private CanvasNodeViewModel? _selectedNode;
     [ObservableProperty] private string _inspectorTitle = "Inspector";
     [ObservableProperty] private string _inspectorContent = "";
     [ObservableProperty] private string _parametersContent = "";
 
-    // ───── Internal ─────
+    // ????? Internal ?????
     private Trace? _trace;
 
     public MainViewModel()
@@ -289,12 +343,19 @@ public partial class MainViewModel : ObservableObject
         CanvasNodes.Add(OutputNode);
     }
 
-    // ═══════ Canvas Commands ═══════
+    // ????????Canvas Commands ????????
 
     /// <summary>Add a new op node onto the canvas at specified position.</summary>
     [RelayCommand]
     private void AddNodeToCanvas(PaletteDropInfo info)
     {
+        // Composite modules expand into multiple nodes + connections
+        if (info.OpType == "FFN")
+        {
+            AddCompositeFFN(info.X, info.Y);
+            return;
+        }
+
         var node = new CanvasNodeViewModel
         {
             OpType = info.OpType,
@@ -304,6 +365,93 @@ public partial class MainViewModel : ObservableObject
         ApplyDefaults(node);
         node.UpdateLabel();
         CanvasNodes.Add(node);
+    }
+
+    /// <summary>
+    /// Expand FFN composite: FlatLinear3D (dModel?fDim) ??ReLU ??FlatLinear3D (ffDim?Model).
+    /// Creates 3 nodes and 2 connections, laid out vertically from the drop point.
+    /// </summary>
+    private void AddCompositeFFN(double x, double y)
+    {
+        const int dModel = 64;
+        const int ffDim = 128;
+        const double vertGap = 80;
+
+        var ff1 = new CanvasNodeViewModel
+        {
+            OpType = "FlatLinear3D",
+            X = x,
+            Y = y,
+            InFeatures = dModel,
+            OutFeatures = ffDim,
+        };
+        ff1.UpdateLabel();
+        CanvasNodes.Add(ff1);
+
+        var relu = new CanvasNodeViewModel
+        {
+            OpType = "ReLU",
+            X = x,
+            Y = y + vertGap,
+        };
+        relu.UpdateLabel();
+        CanvasNodes.Add(relu);
+
+        var ff2 = new CanvasNodeViewModel
+        {
+            OpType = "FlatLinear3D",
+            X = x,
+            Y = y + vertGap * 2,
+            InFeatures = ffDim,
+            OutFeatures = dModel,
+        };
+        ff2.UpdateLabel();
+        CanvasNodes.Add(ff2);
+
+        // Auto-wire: ff1 -> relu -> ff2
+        var conn1 = new ConnectionViewModel { From = ff1, FromPort = "output", To = relu, ToPort = "input" };
+        conn1.UpdatePositions();
+        Connections.Add(conn1);
+
+        var conn2 = new ConnectionViewModel { From = relu, FromPort = "output", To = ff2, ToPort = "input" };
+        conn2.UpdatePositions();
+        Connections.Add(conn2);
+
+        AddFfnGroup([ff1, relu, ff2]);
+        StepInfo = $"Added FFN block: Linear3D({dModel}->{ffDim}) -> ReLU -> Linear3D({ffDim}->{dModel})";
+    }
+
+    private void AddFfnGroup(IEnumerable<CanvasNodeViewModel> members)
+    {
+        var nodes = members
+            .Where(n => n.OpType is not "GraphInput" and not "GraphOutput")
+            .Distinct()
+            .ToList();
+        if (nodes.Count == 0) return;
+
+        var group = new CanvasGroupViewModel
+        {
+            GroupType = "FFN",
+            Label = "FFN",
+        };
+        group.Members.AddRange(nodes);
+        group.RecalculateBounds();
+        CanvasGroups.Add(group);
+    }
+
+    private void RemoveNodeFromGroups(CanvasNodeViewModel node)
+    {
+        var affected = CanvasGroups.Where(g => g.Contains(node)).ToList();
+        foreach (var group in affected)
+        {
+            group.Members.Remove(node);
+            if (group.Members.Count == 0)
+            {
+                CanvasGroups.Remove(group);
+                continue;
+            }
+            group.RecalculateBounds();
+        }
     }
 
     private void ApplyDefaults(CanvasNodeViewModel node)
@@ -324,6 +472,9 @@ public partial class MainViewModel : ObservableObject
             case "BatchNorm2D":
                 node.InChannels = 16;
                 break;
+            case "FlatLinear3D":
+                node.InFeatures = 64; node.OutFeatures = 128;
+                break;
             case "MultiHeadAttention":
                 node.DModel = 64; node.NumHeads = 4;
                 break;
@@ -343,6 +494,7 @@ public partial class MainViewModel : ObservableObject
         if (node.IsFixed) return;
         var toRemove = Connections.Where(c => c.From == node || c.To == node).ToList();
         foreach (var c in toRemove) Connections.Remove(c);
+        RemoveNodeFromGroups(node);
         CanvasNodes.Remove(node);
         if (SelectedNode == node) SelectedNode = null;
     }
@@ -360,6 +512,7 @@ public partial class MainViewModel : ObservableObject
     private void ClearAllNodes()
     {
         Connections.Clear();
+        CanvasGroups.Clear();
         var toRemove = CanvasNodes.Where(n => !n.IsFixed).ToList();
         foreach (var n in toRemove) CanvasNodes.Remove(n);
         SelectedNode = null;
@@ -378,7 +531,7 @@ public partial class MainViewModel : ObservableObject
             WiringSourceIsOutput = info.IsOutput;
             IsWiring = true;
             string dir = info.IsOutput ? "output" : "input";
-            StepInfo = $"Wiring from {info.Node.Label}.{info.PortName} ({dir}) — click a port to connect.";
+            StepInfo = $"Wiring from {info.Node.Label}.{info.PortName} ({dir}) ??click a port to connect.";
             return;
         }
 
@@ -400,7 +553,7 @@ public partial class MainViewModel : ObservableObject
         }
         else
         {
-            StepInfo = "Must connect output → input.";
+            StepInfo = "Must connect output ??input.";
             CancelWiring();
             return;
         }
@@ -415,7 +568,7 @@ public partial class MainViewModel : ObservableObject
         conn.UpdatePositions();
         Connections.Add(conn);
 
-        StepInfo = $"Connected {from.Label}.{fromPort} → {to.Label}.{toPort}";
+        StepInfo = $"Connected {from.Label}.{fromPort} ??{to.Label}.{toPort}";
         CancelWiring();
     }
 
@@ -433,7 +586,7 @@ public partial class MainViewModel : ObservableObject
         Connections.Remove(conn);
     }
 
-    /// <summary>Called when a node is dragged — update connected edge positions.</summary>
+    /// <summary>Called when a node is dragged ??update connected edge positions.</summary>
     public void OnNodeMoved(CanvasNodeViewModel node)
     {
         foreach (var c in Connections)
@@ -441,9 +594,11 @@ public partial class MainViewModel : ObservableObject
             if (c.From == node || c.To == node)
                 c.UpdatePositions();
         }
+        foreach (var group in CanvasGroups.Where(g => g.Contains(node)))
+            group.RecalculateBounds();
     }
 
-    // ═══════ Build & Run ═══════
+    // ????????Build & Run ????????
 
     [RelayCommand]
     private void BuildAndRun()
@@ -484,6 +639,7 @@ public partial class MainViewModel : ObservableObject
                     "MultiHeadAttention" => new MultiHeadAttentionOp(node.Id, node.DModel, node.NumHeads, rng, node.Label),
                     "PositionalEncoding" => new PositionalEncodingOp(node.Id, node.DModel, node.MaxSeqLen, node.Label),
                     "MeanPool1D" => new MeanPool1DOp(node.Id, "MeanPool1D"),
+                    "FlatLinear3D" => new FlatLinear3DOp(node.Id, node.InFeatures, node.OutFeatures, rng, node.Label),
                     _ => throw new InvalidOperationException($"Unknown op: {node.OpType}")
                 };
                 graph.AddOp(op);
@@ -569,7 +725,7 @@ public partial class MainViewModel : ObservableObject
         if (node == InputNode)
         {
             InspectorTitle = "Input";
-            InspectorContent = $"── Input Vector ──\n  {InputText}";
+            InspectorContent = $"?? Input Vector ??\n  {InputText}";
             ParametersContent = "";
             return;
         }
@@ -593,7 +749,7 @@ public partial class MainViewModel : ObservableObject
                     if (outTensor != null)
                     {
                         var sb = new System.Text.StringBuilder();
-                        sb.AppendLine("── Final Output ──");
+                        sb.AppendLine("?? Final Output ??");
                         sb.AppendLine($"  shape=[{string.Join(",", outTensor.Shape)}]");
                         sb.AppendLine($"  {FormatTensorValues(outTensor)}");
                         InspectorContent = sb.ToString();
@@ -615,13 +771,13 @@ public partial class MainViewModel : ObservableObject
         }
 
         var sb2 = new System.Text.StringBuilder();
-        sb2.AppendLine("── Inputs ──");
+        sb2.AppendLine("?? Inputs ??");
         foreach (var (port, tensor) in step.Inputs)
         {
             sb2.AppendLine($"  {port}: shape=[{string.Join(",", tensor.Shape)}]");
             sb2.AppendLine($"    {FormatTensorValues(tensor)}");
         }
-        sb2.AppendLine("\n── Outputs ──");
+        sb2.AppendLine("\n?? Outputs ??");
         foreach (var (port, tensor) in step.Outputs)
         {
             sb2.AppendLine($"  {port}: shape=[{string.Join(",", tensor.Shape)}]");
@@ -632,7 +788,7 @@ public partial class MainViewModel : ObservableObject
         if (step.Parameters.Count > 0)
         {
             var psb = new System.Text.StringBuilder();
-            psb.AppendLine("── Parameters ──");
+            psb.AppendLine("?? Parameters ??");
             foreach (var (name, tensor) in step.Parameters)
             {
                 psb.AppendLine($"  {name}: shape=[{string.Join(",", tensor.Shape)}]");
@@ -643,7 +799,7 @@ public partial class MainViewModel : ObservableObject
         else ParametersContent = "(no parameters)";
     }
 
-    // ═══════ Internal ═══════
+    // ????????Internal ????????
 
     private void ApplyStep(int stepIndex)
     {
@@ -697,7 +853,7 @@ public partial class MainViewModel : ObservableObject
             }
         }
         OutputNode.Status = "active";
-        StepInfo = $"Step {TotalSteps}/{TotalSteps}: Final output → {OutputNode.OutputSummary}";
+        StepInfo = $"Step {TotalSteps}/{TotalSteps}: Final output ??{OutputNode.OutputSummary}";
         SelectNode(OutputNode);
     }
 
@@ -713,7 +869,7 @@ public partial class MainViewModel : ObservableObject
         return $"{string.Join(", ", t.Data.Take(4).Select(v => v.ToString("F3")))} ...";
     }
 
-    // ═══════ Project Save/Load ═══════
+    // ????????Project Save/Load ????????
 
     public ProjectFile ExportProject()
     {
@@ -758,6 +914,18 @@ public partial class MainViewModel : ObservableObject
             });
         }
 
+        foreach (var group in CanvasGroups)
+        {
+            if (group.Members.Count == 0) continue;
+            project.Groups.Add(new ProjectCompositeGroup
+            {
+                Id = group.Id,
+                GroupType = group.GroupType,
+                Label = group.Label,
+                NodeIds = group.Members.Select(n => n.Id).ToList(),
+            });
+        }
+
         return project;
     }
 
@@ -767,6 +935,7 @@ public partial class MainViewModel : ObservableObject
         var toRemove = CanvasNodes.Where(n => !n.IsFixed).ToList();
         foreach (var n in toRemove) CanvasNodes.Remove(n);
         Connections.Clear();
+        CanvasGroups.Clear();
 
         InputText = project.InputText;
         Seed = project.Seed;
@@ -827,14 +996,37 @@ public partial class MainViewModel : ObservableObject
             Connections.Add(conn);
         }
 
+        foreach (var pGroup in project.Groups)
+        {
+            var members = pGroup.NodeIds
+                .Select(id => nodeMap.TryGetValue(id, out var node) ? node : null)
+                .Where(node => node is { OpType: not "GraphInput" and not "GraphOutput" })
+                .Cast<CanvasNodeViewModel>()
+                .Distinct()
+                .ToList();
+            if (members.Count == 0) continue;
+
+            var group = new CanvasGroupViewModel
+            {
+                Id = string.IsNullOrWhiteSpace(pGroup.Id) ? Guid.NewGuid().ToString("N")[..8] : pGroup.Id,
+                GroupType = string.IsNullOrWhiteSpace(pGroup.GroupType) ? "FFN" : pGroup.GroupType,
+                Label = string.IsNullOrWhiteSpace(pGroup.Label) ? "FFN" : pGroup.Label,
+            };
+            group.Members.AddRange(members);
+            group.RecalculateBounds();
+            CanvasGroups.Add(group);
+        }
+
         ResetCommand.Execute(null);
         StepInfo = $"Loaded project: {project.Name}";
     }
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 // DTOs for command parameters
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ????????????????????????????????????????????????????
 
 public record PaletteDropInfo(string OpType, double X, double Y);
 public record PortClickInfo(CanvasNodeViewModel Node, string PortName, bool IsOutput);
+
+

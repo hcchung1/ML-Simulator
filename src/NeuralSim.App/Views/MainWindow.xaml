@@ -264,7 +264,7 @@
 
         <!-- Status bar -->
         <Border Grid.Row="2" Background="{StaticResource BgMediumBrush}" Padding="10,4">
-            <TextBlock Text="NeuralSim v1.3 — CNN / ResNet / Transformer · Ctrl+Scroll=Zoom · Alt+Scroll=H-Pan"
+            <TextBlock Text="NeuralSim v1.12 — CNN / ResNet / Transformer · Ctrl+Scroll=Zoom · Alt+Scroll=H-Pan"
                        Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" />
         </Border>
     </Grid>

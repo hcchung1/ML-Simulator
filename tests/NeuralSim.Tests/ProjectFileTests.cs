@@ -57,4 +57,36 @@ public class ProjectFileTests
         Assert.Equal(64, loaded.Nodes[0].DModel);
         Assert.Equal(4, loaded.Nodes[0].NumHeads);
     }
+
+    [Fact]
+    public void ProjectFile_CompositeGroups_Preserved()
+    {
+        var project = new ProjectFile
+        {
+            Nodes =
+            [
+                new ProjectNode { Id = "ff1", OpType = "FlatLinear3D" },
+                new ProjectNode { Id = "relu", OpType = "ReLU" },
+                new ProjectNode { Id = "ff2", OpType = "FlatLinear3D" },
+            ],
+            Groups =
+            [
+                new ProjectCompositeGroup
+                {
+                    Id = "g1",
+                    GroupType = "FFN",
+                    Label = "FFN",
+                    NodeIds = ["ff1", "relu", "ff2"],
+                }
+            ]
+        };
+
+        var json = project.ToJson();
+        var loaded = ProjectFile.FromJson(json);
+
+        Assert.Single(loaded.Groups);
+        Assert.Equal("FFN", loaded.Groups[0].GroupType);
+        Assert.Equal(3, loaded.Groups[0].NodeIds.Count);
+        Assert.Contains("relu", loaded.Groups[0].NodeIds);
+    }
 }

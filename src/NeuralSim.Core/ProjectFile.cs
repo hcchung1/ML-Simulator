@@ -9,13 +9,14 @@ namespace NeuralSim.Core;
 /// </summary>
 public sealed class ProjectFile
 {
-    public string Version { get; set; } = "1.1";
+    public string Version { get; set; } = "1.2";
     public string Name { get; set; } = "Untitled";
     public string Description { get; set; } = "";
     public string InputText { get; set; } = "";
     public int Seed { get; set; } = 42;
     public List<ProjectNode> Nodes { get; set; } = [];
     public List<ProjectConnection> Connections { get; set; } = [];
+    public List<ProjectCompositeGroup> Groups { get; set; } = [];
 
     private static readonly JsonSerializerOptions _options = new()
     {
@@ -65,4 +66,13 @@ public sealed class ProjectConnection
     public string FromPort { get; set; } = "output";
     public string ToId { get; set; } = "";
     public string ToPort { get; set; } = "input";
+}
+
+/// <summary>A visual composite frame grouping multiple nodes.</summary>
+public sealed class ProjectCompositeGroup
+{
+    public string Id { get; set; } = "";
+    public string GroupType { get; set; } = "";
+    public string Label { get; set; } = "";
+    public List<string> NodeIds { get; set; } = [];
 }

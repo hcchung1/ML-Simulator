@@ -24,6 +24,38 @@
                 <Grid.LayoutTransform>
                     <ScaleTransform ScaleX="{Binding ZoomScale}" ScaleY="{Binding ZoomScale}" />
                 </Grid.LayoutTransform>
+        <!-- Composite frames layer (behind edges/nodes) -->
+        <ItemsControl x:Name="GroupsLayer" ItemsSource="{Binding CanvasGroups}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="Canvas.Left" Value="{Binding X}" />
+                    <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:CanvasGroupViewModel}">
+                    <Grid Width="{Binding Width}" Height="{Binding Height}" IsHitTestVisible="False">
+                        <Border Background="{Binding FillColor, Converter={StaticResource HexToBrush}}"
+                                BorderBrush="{Binding BorderColor, Converter={StaticResource HexToBrush}}"
+                                BorderThickness="2"
+                                CornerRadius="28" />
+                        <TextBlock Text="{Binding Label}"
+                                   Foreground="#111111"
+                                   FontFamily="Times New Roman"
+                                   FontSize="40"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Bottom"
+                                   Margin="0,0,18,10" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
         <!-- Edges layer (behind nodes) -->
         <ItemsControl x:Name="EdgesLayer" ItemsSource="{Binding Connections}">
             <ItemsControl.ItemsPanel>

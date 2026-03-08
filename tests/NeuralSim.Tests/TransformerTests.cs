@@ -166,4 +166,63 @@ public class TransformerTests
         bool hasAdd = graph.Nodes.Any(n => n.OpType == "Add");
         Assert.True(hasAdd, "Transformer should have Add ops for residual connections");
     }
+
+    // ───── FFN Composite (FlatLinear3D → ReLU → FlatLinear3D) ─────
+
+    [Fact]
+    public void FlatLinear3DOp_Handles2DInput()
+    {
+        var op = new FlatLinear3DOp("ff", 4, 8, rng: new Random(42));
+        var input = Tensor.Random(new Random(0), 1, 4); // 2D input
+        var result = op.Compute(new() { ["input"] = input });
+        Assert.Equal([1, 8], result["output"].Shape);
+    }
+
+    [Fact]
+    public void FFN_Composite_Graph_Executes()
+    {
+        // Build a minimal FFN sub-graph: FlatLinear3D → ReLU → FlatLinear3D
+        var rng = new Random(42);
+        var graph = new Graph();
+
+        var ff1 = new FlatLinear3DOp("ff1", 8, 16, rng, "FFN Linear1");
+        var relu = new ReLUOp("ff_relu", "FFN ReLU");
+        var ff2 = new FlatLinear3DOp("ff2", 16, 8, rng, "FFN Linear2");
+
+        graph.AddOp(ff1);
+        graph.AddOp(relu);
+        graph.AddOp(ff2);
+
+        ff1.InputPorts["input"] = new OpPort("graph_input", "output");
+        relu.InputPorts["input"] = new OpPort("ff1", "output");
+        ff2.InputPorts["input"] = new OpPort("ff_relu", "output");
+
+        // 3D input simulating Transformer sequence
+        var input = Tensor.Random(new Random(0), 1, 4, 8);
+        var trace = Executor.Run(graph, input);
+
+        Assert.Equal(3, trace.StepCount);
+        Assert.NotNull(trace.Output);
+        Assert.Equal([1, 4, 8], trace.Output!.Shape);
+    }
+
+    [Fact]
+    public void FFN_Composite_PreservesShape()
+    {
+        // FFN should map (B,S,D) → (B,S,D) with same D
+        var rng = new Random(42);
+        var ff1 = new FlatLinear3DOp("ff1", 8, 32, rng);
+        var relu = new ReLUOp("relu");
+        var ff2 = new FlatLinear3DOp("ff2", 32, 8, rng);
+
+        var input = Tensor.Random(new Random(0), 2, 6, 8); // batch=2, seq=6, dim=8
+        var h = ff1.Compute(new() { ["input"] = input })["output"];
+        Assert.Equal([2, 6, 32], h.Shape);
+
+        h = relu.Compute(new() { ["input"] = h })["output"];
+        Assert.Equal([2, 6, 32], h.Shape);
+
+        h = ff2.Compute(new() { ["input"] = h })["output"];
+        Assert.Equal([2, 6, 8], h.Shape);
+    }
 }
